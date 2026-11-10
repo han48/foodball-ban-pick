@@ -1,0 +1,300 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "DM Sans", sans-serif;
+  color: #183324;
+  background: #f3f8f2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --green: #23804d;
+  --lime: #d3f66b;
+  --ink: #183324;
+  --muted: #748679;
+  --line: #e4ece4;
+}
+
+* { box-sizing: border-box; }
+body { @apply m-0 min-w-[320px] min-h-screen bg-[#f3f8f2]; }
+button, input, textarea { font: inherit; }
+button { color: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { @apply outline-2 outline-offset-2 outline-emerald-500; }
+
+@layer components {
+  .app-shell { @apply mx-auto max-w-[1600px] px-12 pb-11; }
+  .topbar { @apply flex h-[72px] items-center justify-between border-b border-[#e5ede5]; }
+  .topbar-actions { @apply flex items-center gap-2; }
+  .brand { @apply flex items-center gap-2 text-[15px] font-extrabold tracking-[.13em] text-[#183324] no-underline; font-family: "Space Grotesk", sans-serif; }
+  .brand > span:last-child { @apply text-emerald-700; }
+  .brand-ball { @apply grid h-8 w-8 place-items-center rounded-full bg-[#e6f4e7] text-emerald-700; }
+  .brand-ball svg { @apply text-sm; }
+  .connection-label { @apply flex items-center gap-2 text-[9px] font-bold tracking-[.12em] text-slate-500; }
+  .connection-dot, .live-dot { @apply inline-block h-2 w-2 rounded-full bg-slate-300; }
+  .connection-dot.connected, .live-dot { @apply bg-emerald-500; box-shadow: 0 0 0 3px #22c55e1f; }
+  .connection-dot.waiting { @apply bg-amber-400; }
+  .network-overlay { @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm; }
+  .network-window { @apply flex w-full max-w-[1100px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0d1914] p-5 text-white shadow-2xl; max-height: min(850px, calc(100vh - 32px)); }
+  .network-heading { @apply flex items-start justify-between gap-4; }
+  .network-heading h2 { @apply mt-1 text-xl font-bold tracking-tight text-white; font-family: "Space Grotesk", sans-serif; }
+  .network-heading p { @apply mt-1 text-xs text-emerald-100/60; }
+  .network-legend { @apply flex flex-wrap items-center gap-x-5 gap-y-2 py-4 text-[9px] font-semibold text-emerald-50/60; }
+  .network-legend > span:last-child { @apply ml-auto; }
+  .network-legend-line { @apply inline-block mr-2 w-6 border-t border-emerald-100/40 align-middle; }
+  .network-legend-line.active { @apply border-2 border-lime-300; box-shadow: 0 0 8px #d3f66b; }
+  .network-graph { @apply relative min-h-[360px] flex-1 overflow-hidden rounded-xl border border-emerald-100/10; height: min(66vh, 640px); background: radial-gradient(ellipse at center,#1e4b34 0%,#10251a 48%,#0b1711 100%); }
+  .network-lines { @apply absolute inset-0 h-full w-full; }
+  .network-link { fill: none; stroke: #8db9a0; stroke-opacity: .3; stroke-width: 2; stroke-dasharray: 8 7; vector-effect: non-scaling-stroke; }
+  .network-link.open { stroke-opacity: .62; stroke-dasharray: none; }
+  .network-link.active { stroke: #d3f66b; stroke-opacity: 1; stroke-width: 4; filter: drop-shadow(0 0 7px #d3f66b); animation: network-pulse .7s ease-out; }
+  .network-link.active.in { stroke: #67e8f9; filter: drop-shadow(0 0 7px #67e8f9); }
+  .network-node { @apply absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-xl border px-3 py-2 text-center shadow-lg; width: 158px; background: #10251feF; border-color: #b7d9c52e; }
+  .network-node-icon { @apply mb-1 grid h-8 w-8 place-items-center rounded-full bg-emerald-800 text-sm font-extrabold text-lime-100 ring-2 ring-emerald-300/30; font-family: "Space Grotesk", sans-serif; }
+  .network-node > b { @apply max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-bold text-white; }
+  .network-node > small { @apply mt-0.5 text-[7px] font-extrabold tracking-[.11em] text-emerald-100/55; }
+  .network-node .node-status { @apply mt-1.5 rounded-full px-2 py-1 text-[7px] not-italic font-extrabold tracking-wide; }
+  .node-status.online { @apply bg-emerald-300/10 text-emerald-200; }
+  .node-status.pending { @apply bg-amber-300/10 text-amber-200; }
+  .network-node.peer-node.team-0 { border-color: #f5c84b99; }
+  .network-node.peer-node.team-1 { border-color: #f0645b99; }
+  .network-node.transmitting { border-color: #d3f66b; box-shadow: 0 0 22px #d3f66b66; }
+  .network-node.transmitting .node-status { @apply bg-lime-200 text-emerald-950; }
+  .network-empty { @apply absolute left-1/2 top-[18%] -translate-x-1/2 rounded-lg bg-black/20 px-4 py-2 text-center text-xs text-emerald-100/70; }
+  @keyframes network-pulse { 0% { stroke-width: 8; stroke-opacity: .45; } 100% { stroke-width: 4; stroke-opacity: 1; } }
+  .button { @apply cursor-pointer font-bold transition duration-150; }
+  .button-outline { @apply rounded-lg border border-[#d9e5d9] bg-white px-3 py-2 text-[10px] text-slate-700 shadow-sm hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800; }
+  .button-primary { @apply rounded-lg bg-emerald-700 px-3 py-2 text-[10px] text-white shadow-sm hover:bg-emerald-800; }
+  .button:disabled { @apply cursor-not-allowed opacity-40; }
+  .intro { @apply flex items-end justify-between py-8; }
+  .eyebrow, .section-head > div > small, .side-heading > small { @apply text-[9px] font-extrabold tracking-[.16em] text-emerald-700; }
+  .intro h1 { @apply mt-2 text-[38px] font-bold leading-tight tracking-[-.05em] text-[#183324]; font-family: "Space Grotesk", sans-serif; }
+  .intro h1 span { @apply text-emerald-700; }
+  .intro p { @apply mt-2 text-xs text-slate-500; }
+  .session { @apply flex items-center gap-3 rounded-xl border border-[#e4ece4] bg-white px-3 py-2.5 shadow-sm; }
+  .session > span { @apply grid h-9 w-9 place-items-center rounded-lg bg-lime-100 text-emerald-800; }
+  .session div { @apply grid gap-1; }
+  .session small { @apply text-[8px] font-bold tracking-[.12em] text-slate-400; }
+  .session b { @apply text-[10px] font-bold tracking-wide text-slate-700; font-family: "Space Grotesk", sans-serif; }
+  .status-bar { @apply flex items-center gap-4 rounded-lg border border-[#e4ece4] bg-white px-4 py-3 text-[8px] font-bold tracking-[.1em] text-slate-500 shadow-sm; }
+  .status-bar > span:first-child { @apply text-slate-700; }
+  .status-bar > span:last-child { @apply ml-auto; }
+  .status-bar b { @apply text-slate-800; }
+  .live-dot { @apply mr-2; }
+  .layout { @apply mt-4 grid grid-cols-[minmax(0,1fr)_276px] items-start gap-5; }
+  .main-column { @apply min-w-0; }
+  .teams { @apply mb-4 grid grid-cols-2 gap-3; }
+  .team-card { @apply relative overflow-hidden rounded-xl border border-[#e5ece4] bg-white p-3.5 shadow-sm transition; }
+  .team-card:before { content: ""; @apply absolute inset-y-0 left-0 w-1; background: var(--team-color); }
+  .team-card.active { border-color: color-mix(in srgb, var(--team-color) 52%, white); box-shadow: 0 5px 18px color-mix(in srgb, var(--team-color) 12%, transparent); }
+  .team-top { @apply flex items-center gap-3; }
+  .team-mark { @apply grid h-9 w-9 place-items-center rounded-lg text-[10px] font-extrabold text-slate-900; font-family: "Space Grotesk", sans-serif; background: var(--team-color); }
+  .team-info { @apply min-w-0; }
+  .team-info input { @apply w-full border-0 bg-transparent p-0 text-[13px] font-bold text-slate-800 outline-none disabled:cursor-default; font-family: "Space Grotesk", sans-serif; }
+  .team-info small { @apply mt-1 block text-[8px] text-slate-500; }
+  .color-picker { @apply relative ml-auto h-5 w-5 cursor-pointer; }
+  .color-picker input { @apply absolute inset-0 h-full w-full cursor-pointer opacity-0; }
+  .color-picker i { @apply block h-4 w-4 rounded-full border-2 border-white shadow ring-1 ring-slate-200; background: var(--team-color); }
+  .team-top > strong { @apply text-xl font-bold; font-family: "Space Grotesk", sans-serif; color: var(--team-color); }
+  .team-bottom { @apply mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[9px] text-slate-500; }
+  .team-bottom label { @apply flex items-center gap-2; }
+  .team-bottom input { @apply w-[88px] border-0 bg-transparent text-[9px] text-slate-600 outline-none disabled:cursor-default; }
+  .team-bottom > span { @apply rounded-full px-2 py-1 text-[7px] font-extrabold tracking-wider; color: #576c15; background: color-mix(in srgb, var(--team-color) 30%, white); }
+  .panel { @apply rounded-xl border border-[#e4ece4] bg-white shadow-soft; }
+  .section-head { @apply flex items-center justify-between px-4 py-3.5; }
+  .section-head h2 { @apply mt-1 text-[15px] font-bold tracking-tight text-slate-800; font-family: "Space Grotesk", sans-serif; }
+  .section-head h2 span { @apply ml-1 border-l border-slate-200 pl-2 text-[9px] font-medium text-slate-400; font-family: "DM Sans", sans-serif; }
+  .section-head h2 em { @apply ml-1 rounded-full bg-emerald-50 px-2 py-1 align-middle text-[9px] not-italic text-emerald-800; font-family: "DM Sans", sans-serif; }
+  .drag-tip { @apply text-[9px] text-slate-400; }
+  .pitch { @apply relative mx-3 aspect-[105/68] overflow-hidden rounded-lg border border-emerald-800/20; background: repeating-linear-gradient(90deg,#ffffff0b 0 34px,#00000008 34px 68px),linear-gradient(125deg,#2c985c,#20814b 52%,#2d995d); }
+  .pitch:before { content: ""; @apply absolute inset-0; background: radial-gradient(ellipse at center,#a8ec8440,transparent 70%); }
+  .pitch-lines { @apply absolute inset-[10px] border border-white/50; }
+  .half-line { @apply absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-white/50; }
+  .circle { @apply absolute left-1/2 top-1/2 aspect-square h-auto w-[18%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/50; }
+  .spot { @apply absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80; }
+  .box { @apply absolute top-1/2 h-[43%] w-[15%] -translate-y-1/2 border border-white/45; }
+  .box-top { @apply left-0 border-l-0; }
+  .box-bottom { @apply right-0 border-r-0; }
+  .goal { @apply absolute top-1/2 h-[21%] w-[7%] -translate-y-1/2 border border-white/45; }
+  .goal-top { @apply left-0 border-l-0; }
+  .goal-bottom { @apply right-0 border-r-0; }
+  .pitch-empty { @apply absolute inset-0 flex flex-col items-center justify-center gap-2 text-white; text-shadow: 0 1px 5px #134b2b88; }
+  .pitch-empty > b { @apply text-3xl text-lime-200; }
+  .pitch-empty strong { @apply text-[13px] font-bold; font-family: "Space Grotesk", sans-serif; }
+  .pitch-empty span { @apply text-[9px] text-white/80; }
+  .field-player { @apply absolute z-10 flex w-[70px] -translate-x-1/2 -translate-y-1/2 cursor-grab select-none flex-col items-center gap-1 active:cursor-grabbing; }
+  .field-player > b { @apply grid h-7 w-7 place-items-center rounded-lg border-2 border-white text-[9px] font-extrabold text-slate-900 shadow-md; font-family: "Space Grotesk", sans-serif; background: var(--shirt); }
+  .field-player.keeper > b { @apply rounded-full border-sky-100 bg-sky-300 text-sky-950; }
+  .field-player > span { @apply max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded bg-[#134b2b]/80 px-1.5 py-0.5 text-[8px] font-bold text-white; }
+  .legend { @apply flex gap-5 px-5 py-3 text-[9px] text-slate-500; }
+  .legend > span { @apply flex items-center gap-1.5; }
+  .legend i { @apply inline-block h-2 w-2 rounded-full; }
+  .legend b { @apply grid h-4 w-4 place-items-center rounded-full bg-sky-200 text-[6px] font-extrabold text-sky-900; }
+  .roster { @apply mt-4 pb-3; }
+  .roster-tools { @apply flex items-center gap-2; }
+  .search { @apply flex h-[34px] w-36 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-slate-400; }
+  .search input { @apply w-full border-0 bg-transparent text-[9px] text-slate-700 outline-none placeholder:text-slate-400; }
+  .import { @apply h-[34px]; }
+  .pick-hint { @apply mx-4 mb-3 flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50/80 px-3 py-2.5 text-[9px] text-emerald-900; }
+  .pick-hint > b { @apply text-emerald-700; }
+  .pick-hint strong { @apply text-emerald-900; }
+  .pick-hint > span { @apply ml-auto whitespace-nowrap text-[9px] font-bold tracking-wide text-emerald-700; font-family: "Space Grotesk", sans-serif; }
+  .roster-nav { @apply flex items-center justify-between border-b border-slate-100 px-4; }
+  .roster-nav > div { @apply flex gap-5; }
+  .roster-nav button { @apply cursor-pointer border-0 border-b-2 border-transparent bg-transparent pb-2.5 text-[9px] text-slate-500; }
+  .roster-nav button.selected { @apply border-emerald-600 font-bold text-emerald-800; }
+  .roster-nav button i { @apply pl-1 not-italic text-slate-400; }
+  .roster-nav .reset { @apply text-slate-500 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40; }
+  .player-grid { @apply grid grid-cols-2 gap-2 px-4 py-3; }
+  .player-card { @apply flex min-w-0 cursor-pointer items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/70 px-2 py-2 text-left transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50; }
+  .player-avatar { @apply grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-100 text-[11px] font-bold text-emerald-800; font-family: "Space Grotesk", sans-serif; }
+  .avatar-1 { @apply bg-orange-100 text-orange-800; }
+  .avatar-2 { @apply bg-sky-100 text-sky-800; }
+  .avatar-3 { @apply bg-violet-100 text-violet-800; }
+  .avatar-4 { @apply bg-lime-100 text-lime-900; }
+  .player-copy { @apply min-w-0 flex-1; }
+  .player-copy b { @apply block truncate text-[9px] font-bold text-slate-800; }
+  .player-copy small { @apply mt-1 block text-[8px] text-slate-500; }
+  .player-card > i { @apply text-[10px] font-bold not-italic text-slate-400; font-family: "Space Grotesk", sans-serif; }
+  .plus { @apply grid h-5 w-5 place-items-center rounded-md bg-white text-[10px] text-emerald-700 shadow-sm; }
+  .player-card:hover .plus { @apply bg-emerald-700 text-white; }
+  .empty-list { @apply grid min-h-[100px] place-items-center text-[10px] text-slate-400; }
+  .history { @apply max-h-[250px] overflow-auto px-4 py-2; }
+  .history > div { @apply flex items-center gap-3 border-b border-slate-100 py-2.5 text-[9px] text-slate-500; }
+  .history b { @apply flex-1 text-slate-800; }
+  .history i { @apply text-[9px] font-bold not-italic text-slate-400; font-family: "Space Grotesk", sans-serif; }
+  .csv-note { @apply px-4 pt-2 text-[8px] text-slate-400; }
+  .csv-note code { @apply rounded bg-slate-100 px-1 py-0.5 text-[8px] text-slate-600; }
+  .csv-note a { @apply ml-1 font-semibold text-emerald-700 no-underline hover:underline; }
+  .sidebar { @apply flex flex-col gap-3; }
+  .side-panel, .squad { @apply p-4; }
+  .side-heading { @apply flex items-center justify-between; }
+  .side-heading > b { @apply rounded-lg bg-lime-100 px-2 py-1.5 text-[11px] font-bold text-emerald-800; font-family: "Space Grotesk", sans-serif; }
+  .turn-card { @apply mt-4 flex items-center gap-3; }
+  .turn-card > span { @apply grid h-10 w-10 place-items-center rounded-xl text-sm text-emerald-950; }
+  .turn-card > div { @apply grid gap-1; }
+  .turn-card small, .side-stats small { @apply text-[8px] font-bold tracking-wider text-slate-400; }
+  .turn-card b { @apply text-[13px] font-bold text-slate-800; font-family: "Space Grotesk", sans-serif; }
+  .side-stats { @apply mt-4 grid grid-cols-2 border-y border-slate-100 py-3; }
+  .side-stats > div { @apply flex flex-col gap-1.5; }
+  .side-stats > div + div { @apply border-l border-slate-100 pl-3; }
+  .side-stats b { @apply flex items-center gap-1.5 text-[9px] font-bold text-slate-700; }
+  .side-stats b i, .squad-head i { @apply inline-block h-2 w-2 rounded-full; }
+  .progress { @apply mt-3; }
+  .progress > div { @apply h-1 overflow-hidden rounded-full bg-slate-100; }
+  .progress > div i { @apply block h-full rounded-full bg-emerald-500 transition-all; }
+  .progress > small { @apply mt-2 flex justify-between text-[8px] text-slate-500; }
+  .squad .side-heading h3 { @apply mt-1 text-[13px] font-bold text-slate-800; font-family: "Space Grotesk", sans-serif; }
+  .squad .side-heading > span { @apply grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-emerald-700; }
+  .squad-team { @apply mt-4; }
+  .squad-team + .squad-team { @apply border-t border-slate-100 pt-3; }
+  .squad-head { @apply flex items-center gap-2 text-[9px]; }
+  .squad-head b { @apply flex-1 font-bold text-slate-700; }
+  .squad-head span { @apply text-[8px] text-slate-400; }
+  .squad-empty { @apply ml-3 mt-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 py-3 text-center text-[8px] text-slate-400; }
+  .squad-list { @apply mt-2 max-h-[195px] overflow-auto; }
+  .squad-list > div { @apply flex cursor-grab items-center gap-2 py-1.5 text-[8px] text-slate-600; }
+  .squad-list > div > span { @apply flex-1; }
+  .squad-list > div > b { @apply grid h-5 w-5 place-items-center rounded-md text-[7px] font-bold text-slate-900; background: var(--shirt); }
+  .squad-list > div > b.mini-keeper { @apply rounded-full bg-sky-200 text-sky-900; }
+  .squad-list small { @apply text-[7px] text-slate-400; }
+  .tip { @apply flex flex-col gap-2 rounded-xl border border-amber-100 bg-amber-50 p-3; }
+  .tip > b { @apply text-[8px] font-extrabold tracking-wider text-amber-700; }
+  .tip p { @apply text-[8px] leading-relaxed text-slate-600; }
+  .sidebar footer { @apply text-center text-[7px] font-semibold tracking-widest text-slate-400; }
+  .connect-panel { @apply my-4 rounded-xl border border-emerald-100 bg-white p-4 shadow-soft; }
+  .panel-title { @apply flex items-start justify-between; }
+  .panel-title h2 { @apply mt-1 text-[17px] font-bold text-slate-800; font-family: "Space Grotesk", sans-serif; }
+  .icon-button { @apply grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800; }
+  .connect-panel > p { @apply my-3 text-[10px] leading-relaxed text-slate-500; }
+  .connect-columns { @apply grid grid-cols-2 gap-3; }
+  .connect-card { @apply flex flex-col items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3; }
+  .connect-card > b { @apply text-[11px] font-bold text-slate-800; font-family: "Space Grotesk", sans-serif; }
+  .connect-card > span, .connect-card label { @apply text-[9px] text-slate-500; }
+  .connect-card textarea { @apply max-h-[110px] min-h-[52px] w-full resize-y rounded-lg border border-slate-200 bg-white p-2 text-[8px] leading-relaxed text-slate-700; font-family: ui-monospace, monospace; }
+  .room-id-row { @apply flex w-full items-center gap-2; }
+  .room-id-row strong { @apply rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-base font-extrabold tracking-[.2em] text-emerald-800; font-family: "Space Grotesk", sans-serif; }
+  .room-id-note { @apply text-[8px] leading-relaxed text-slate-500; }
+  .room-id-input { @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold uppercase tracking-[.2em] text-slate-800 placeholder:text-slate-300 placeholder:tracking-normal; font-family: "Space Grotesk", sans-serif; }
+  .display-name-input { @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 placeholder:text-slate-300 disabled:cursor-not-allowed disabled:bg-slate-100; }
+  .captain-picker { @apply mt-2 flex w-full flex-col gap-2 rounded-lg border border-emerald-100 bg-white p-2; }
+  .captain-picker label { @apply flex w-full flex-col gap-1 text-[9px] font-semibold text-slate-600; }
+  .captain-picker select { @apply w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-[10px] text-slate-700; }
+  .captain-picker > span { @apply text-[9px] text-amber-700; }
+  .toast { @apply fixed bottom-5 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-xl border border-emerald-200 bg-white px-4 py-3 text-[10px] font-semibold text-emerald-900 shadow-lg; }
+  .visually-hidden { @apply absolute m-[-1px] h-px w-px overflow-hidden whitespace-nowrap border-0 p-0; clip: rect(0,0,0,0); }
+}
+
+@media (min-width: 1300px) {
+  .app-shell { @apply px-16; }
+  .layout { @apply grid-cols-[minmax(0,1fr)_300px] gap-5; }
+}
+
+@media (max-width: 1000px) {
+  .app-shell { @apply px-6; }
+  .layout { @apply grid-cols-[minmax(0,1fr)_250px] gap-3; }
+}
+
+@media (max-width: 760px) {
+  .app-shell { @apply px-4 pb-7; }
+  .topbar { @apply h-[60px]; }
+  .topbar-actions { @apply gap-1; }
+  .topbar-actions .button { @apply px-2 py-2 text-[8px]; }
+  .network-window { @apply p-3; }
+  .network-graph { @apply min-h-[420px]; height: 66vh; }
+  .network-node { width: 124px; @apply px-2 py-1.5; }
+  .network-node-icon { @apply h-7 w-7; }
+  .network-node > b { @apply text-[9px]; }
+  .network-node > small { @apply text-[6px]; }
+  .network-node .node-status { @apply px-1.5 text-[6px]; }
+  .connection-label { @apply hidden; }
+  .intro { @apply py-6; }
+  .intro h1 { @apply text-[32px]; }
+  .session { @apply px-2 py-2; }
+  .session > span { @apply h-8 w-8; }
+  .layout { @apply flex flex-col; }
+  .main-column, .sidebar { @apply w-full; }
+  .sidebar { @apply grid grid-cols-2; }
+  .tip, .sidebar footer { @apply col-span-2; }
+  .teams { @apply gap-2; }
+  .team-card { @apply p-2.5; }
+  .team-mark { @apply h-7 w-7; }
+  .team-info input { @apply text-[11px]; }
+  .team-info small { @apply text-[7px]; }
+  .team-top > strong { @apply text-lg; }
+  .team-bottom input { @apply w-[68px] text-[8px]; }
+  .pitch { @apply mx-auto aspect-[68/105] max-w-[460px]; background: repeating-linear-gradient(0deg,#ffffff0b 0 34px,#00000008 34px 68px),linear-gradient(125deg,#2c985c,#20814b 52%,#2d995d); }
+  .half-line { @apply bottom-auto left-0 right-0 top-1/2 h-px w-auto translate-x-0 -translate-y-1/2; }
+  .box { @apply left-1/2 top-auto h-[15%] w-[43%] -translate-x-1/2 translate-y-0; }
+  .box-top { @apply bottom-auto top-0 border-b-0 border-l border-r border-t; }
+  .box-bottom { @apply bottom-0 right-auto border-b border-l border-r border-t-0; }
+  .goal { @apply left-1/2 top-auto h-[7%] w-[21%] -translate-x-1/2 translate-y-0; }
+  .goal-top { @apply bottom-auto top-0 border-b-0 border-l border-r border-t; }
+  .goal-bottom { @apply bottom-0 right-auto border-b border-l border-r border-t-0; }
+  .section-head { @apply px-3 py-3; }
+  .drag-tip { @apply text-[8px]; }
+  .player-grid { @apply px-2.5; }
+  .player-card { @apply gap-1.5 p-1.5; }
+  .player-copy b { @apply text-[8px]; }
+  .search { @apply w-[115px]; }
+  .connect-columns { @apply grid-cols-1; }
+}
+
+@media (max-width: 430px) {
+  .intro h1 { @apply text-[28px]; }
+  .intro p { @apply text-[10px]; }
+  .teams { @apply grid-cols-1; }
+  .team-card { @apply px-3 py-2.5; }
+  .team-bottom input { @apply w-[100px]; }
+  .field-player { transform: translate(-50%,-50%) scale(.88); }
+  .legend { @apply gap-3 px-2 text-[8px]; }
+  .section-head h2 { @apply text-[13px]; }
+  .search { @apply hidden; }
+  .player-grid { @apply grid-cols-1; }
+  .sidebar { @apply grid-cols-1; }
+  .tip, .sidebar footer { @apply col-span-1; }
+  .status-bar { @apply gap-2 px-2.5 py-2.5 text-[7px]; }
+  .status-bar > span:last-child { @apply text-[0px]; }
+  .status-bar > span:last-child b { @apply text-[8px]; }
+  .pick-hint { @apply text-[8px]; }
+  .pick-hint > span { @apply text-[8px]; }
+}
